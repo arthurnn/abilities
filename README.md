@@ -68,20 +68,20 @@ mysql> select * from teams;
 +----+---------------+
 ```
 
-Also, the most important part of this table is the `path_string` column. That column saves a HEX(id) path, separed by `/` of the path that leads to that node. (every node in a tree, can only have one path. Thats a tree property).
-With that path, we can get any node, and walk up or down on that path. Getting the list of parent or children.
+Also, it has a VARBINARY `path_string` column. That column saves a HEX(id) path, separed by `/` of the path that leads to that node. (every node in a tree, can only have one path).
+With that path, we can get any node, and walk up or down on that path. Getting the list of parents or children.
 That allow us to query the tree without needing a recursive/CTE select.
 Also, that avoids multiple level JOINS, as we have the entire path in any node.
 
 Every time we add a node, we have the parent, so we can just append our id.
-In the case of removal. We can `delete like path%` same as when we want to search a sub-tree.
+In the case of removal, we can `delete like path%`. Same as when we want to search a sub-tree.
 
 #### What is the maximum deepth of this tree?
 85 is the maximum number of levels this tree can get with this current implementation.
 The calculation is the following:
 765bytes / ((4bytes / 4bits) + 1byte) = 85
 
-- 765bytes is the maximum allowed key size in a innodb table, so, if we want to have an index on it, thats the maximum bytes we can store.
+- 765bytes is the maximum allowed key size in a innodb index, so, if we want to have an index on it, thats the maximum bytes we can store.
 - 4bytes is the size of an UNASSIGED INT int mysql.
 - 4bits is the size that a hexadecimal char can hold ('F' = 1111 = 4 bits)
 - 1byte the separator byte.
@@ -90,7 +90,7 @@ We don't save the `path_string` as of a path of IDS, even if thats what they are
 
 #### Limitations
 The calculation above assumes that we are using UNASSIGNED INT, and not BIGINT. If we want to use a BIGINT that means our maximum deepth would be 45.
-If we want to increase the number of deepth, with a BIGINT, one thing we could do is instead of using the HEX function, we could implement our function that would take the id and transform it to a base 128 char, using ASCII table, and store that. Not sure how possible that would be though.
+If we want to increase the number of deepth, with a BIGINT, one thing we could do is, instead of using the HEX function, we could implement our function that would take the id and transform it to a base 128 char, using ASCII table, and store that. Not sure how possible that would be though, but that means that instead of only storing 4bits per char, we would be able to store 7bits.
 
 #### Why those IDs are so random?
 The only reason the IDs on that table are random, is because I wanted to push it to the limits and needed to work with big size INTs. In real life, that should be a normal AUTO_INCREMENT column.
