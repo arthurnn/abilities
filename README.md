@@ -10,30 +10,37 @@ Run:
 
 ## API
 
+### INSERT
 #### add(actor, subject):
-Map that the actor has an ability over the subject. For instance
-add('arthurnn', 'Team platform-data'): meaning 'arthurnn' is part of 'Team platform-data'
-add('Team platform-data', 'Repo x'): meaning 'Team platform-data' has a 'Repo x'
+Map that the actor has an ability over the subject. For instance:
+
+- add('arthurnn', 'Team platform-data'): meaning 'arthurnn' is part of 'Team platform-data'
+- add('Team platform-data', 'Repo x'): meaning 'Team platform-data' has a 'Repo x'
 
 #### add_group(group, parent_id = nil)
 Add a group which can have a parent group(parent_id).
-Groups are a florest, which contain many trees. Each tree maps a relationship between
-different groups.
+Group is a node that will be added in a tree.
 For instance:
-add_group('Team platform-data', 'Team platform'.id)
 
+- add_group('Team platform-data', 'Team platform'.id)
+
+### SELECT
 #### all_from(from, to_type)
 Return a list of IDs quering all the nodes, with the type 'to_type', that 'from' has access to.
+For instance:
+
+- all_from('arthurnn', 'Repository): will return all repositories 'arthurnn' can access.
 
 #### all_subgroups(group)
-Returns all subgroups of a group (the whole sub-tree)
+Returns all subgroups of a group (the entire sub-tree).
 
 
 ## Implementation details:
 
 To map abilities(actor, subject) and multiple groups, we have two different tables:
-'abilities': which saves the edges(connections) of two notes that relate to each-other. And Actor can act in a Subject.
-'rels': saves a florest of trees.
+
+- 'abilities': which saves the edges(connections) of two nodes that relate to each-other. And Actor can act in a Subject.
+- 'rels': saves a florest of trees.
 
 ### How are we implementing the tree in MySQL?
 
