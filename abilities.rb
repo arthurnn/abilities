@@ -6,9 +6,9 @@ class Abilities
         id INT UNSIGNED NOT NULL,
         parent_id INT UNSIGNED,
         group_id INT,
-        path_string varbinary(766),
+        path_string varbinary(4069),
         PRIMARY KEY (id),
-        INDEX `path_string_ix` (`path_string`)
+        INDEX `path_string_ix` (`path_string`(767))
       );
     SQL
 
@@ -76,7 +76,7 @@ class Abilities
     results = @client.query <<-SQL
       SELECT A.group_id
       FROM rels A
-      JOIN rels B ON A.path_string like concat('%', B.path_string, '/%')
+      JOIN rels B ON A.path_string like concat(B.path_string, '/%')
       where B.group_id = '#{group.id}';
       SQL
     results.each(:as => :array).map(&:first)
