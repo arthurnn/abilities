@@ -82,4 +82,14 @@ class AbilitiesTest < Minitest::Test
     assert_includes sub_teams, @ha.id
     refute_includes sub_teams, @design.id
   end
+
+  def test_user_with_two_teams
+    rails = Repository.create('rails')
+    @abilities.add(@rails_upgrade, rails)
+    repo_pdata = Repository.create('platform-data')
+    @abilities.add(@pdata, repo_pdata)
+
+    assert_includes @abilities.all_from(@arthurnn, 'Repository'), repo_pdata.id
+    assert_includes @abilities.all_from(@arthurnn, 'Repository'), rails.id
+  end
 end
