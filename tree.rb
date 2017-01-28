@@ -8,7 +8,8 @@ class Tree
         group_id BIGINT,
         path_string varbinary(4069),
         PRIMARY KEY (id),
-        INDEX `path_string_ix` (`path_string`(767))
+        INDEX `path_string_ix` (`path_string`(767)),
+        INDEX `group_id_ix` (`group_id`)
       );
     SQL
   end
