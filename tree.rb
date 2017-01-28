@@ -46,6 +46,17 @@ class Tree
     SQL
   end
 
+  def delete_subtree(node_id)
+    @mysql.query <<-SQL
+      DELETE FROM rels
+      WHERE path_string LIKE (
+            SELECT p FROM (
+                   SELECT concat(B.path_string, '%') as p from rels B where B.group_id=#{node_id}
+            ) as c
+      )
+    SQL
+  end
+
   def subordinates(node_id)
     results = @mysql.query <<-SQL
       SELECT A.group_id
