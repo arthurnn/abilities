@@ -34,6 +34,17 @@ class Tree
     @mysql.query(sql)
   end
 
+  def update_parent(from_node_id, to_node_id)
+    from_path_string = PathString.new.append(from_node_id).to_s
+    to_path_string = PathString.new.append(to_node_id).to_s
+
+    @mysql.query <<-SQL
+      UPDATE rels
+      SET path_string = REPLACE(path_string, '#{from_path_string}', '#{to_path_string}')
+      WHERE group_id = #{from_node_id};
+    SQL
+  end
+
   def subordinates(node_id)
     results = @mysql.query <<-SQL
       SELECT A.group_id
@@ -88,7 +99,7 @@ class Tree
       end
     end
 
-    def initialize(string)
+    def initialize(string = '')
       @s = string
     end
 

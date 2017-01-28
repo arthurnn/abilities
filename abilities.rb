@@ -37,6 +37,11 @@ class Abilities
     tree.insert(node)
   end
 
+  def move_group(group, new_parent)
+    tree = Tree.new(@client)
+    tree.update_parent(group.id, new_parent.id)
+  end
+
   def all_from(from, to_type)
     results = @client.query <<-SQL
       SELECT subject_id

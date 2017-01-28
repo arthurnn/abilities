@@ -92,4 +92,15 @@ class AbilitiesTest < Minitest::Test
     assert_includes @abilities.all_from(@arthurnn, 'Repository'), repo_pdata.id
     assert_includes @abilities.all_from(@arthurnn, 'Repository'), rails.id
   end
+
+  def test_move_group
+    @abilities.add(@design, repo_design = Repository.create('design'))
+    repo_pdata = Repository.create('platform-data')
+    @abilities.add(@pdata, repo_pdata)
+
+    @abilities.move_group(@pdata, @design)
+
+    assert_includes @abilities.all_from(@arthurnn, 'Repository'), repo_design.id
+    refute_includes @abilities.all_from(@arthurnn, 'Repository'), repo_pdata.id
+  end
 end
