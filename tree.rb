@@ -53,8 +53,10 @@ class Tree
   end
 
   def update_parent(from_node_id, to_node_id)
+    @mysql.query "BEGIN"
+
     results = @mysql.query <<-SQL
-      SELECT path_string FROM rels WHERE group_id = #{to_node_id};
+      SELECT path_string FROM rels WHERE group_id = #{to_node_id} LOCK IN SHARE MODE
     SQL
     path_string = results.each(:as => :array)[0][0]
     to_path_string = PathString.new(path_string).append(to_node_id).to_s
@@ -64,6 +66,10 @@ class Tree
       SET path_string = '#{to_path_string}'
       WHERE group_id = #{from_node_id};
     SQL
+    @mysql.query "COMMIT"
+  rescue
+    @mysql.query "ROLLBACK"
+    raise
   end
 
   def delete_subtree(node_id)
