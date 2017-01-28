@@ -61,12 +61,7 @@ class Abilities
   end
 
   def all_subgroups(group)
-    results = @client.query <<-SQL
-      SELECT A.group_id
-      FROM rels A
-      JOIN rels B ON A.path_string like concat(B.path_string, '%')
-      where B.group_id = '#{group.id}';
-    SQL
-    results.each(:as => :array).map(&:first)
+    tree = Tree.new(@client)
+    tree.subordinates(group.id)
   end
 end
