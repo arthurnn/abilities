@@ -16,10 +16,10 @@ class Record
     @@mysql.query("DROP TABLE IF EXISTS #{table_name}")
     @@mysql.query <<-SQL
       CREATE TABLE #{table_name} (
-        id INT NOT NULL AUTO_INCREMENT,
+        id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
         name VARCHAR(255),
         PRIMARY KEY (id)
-      );
+      ) AUTO_INCREMENT=4294967295;
     SQL
   end
 
