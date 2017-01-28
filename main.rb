@@ -3,9 +3,11 @@ require 'mysql2'
 require_relative 'abilities'
 require_relative 'models'
 
+Thread.abort_on_exception = true
+
 class AbilitiesTest < Minitest::Test
   def setup
-    client = Mysql2::Client.new(host: "localhost", username: "root", database: "test")
+    @mysql = client = Mysql2::Client.new(host: "localhost", username: "root", database: "test")
     Record.setup(client)
     Record.models.each { |m| m.create_schema }
     Abilities.create_schema(client)
@@ -104,12 +106,49 @@ class AbilitiesTest < Minitest::Test
     assert_includes @abilities.all_from(@rocio, 'Repository'), repo_design.id
     assert_includes @abilities.all_from(@rocio, 'Repository'), repo_pdata.id
     refute_includes @abilities.all_from(@rocio, 'Repository'), repo_platform.id
+  end
+
+  def test_deleting_del_parent_when_while_adding
+    t = Team.create('under-pdata')
     repo_pdata = Repository.create('platform-data')
     @abilities.add(@pdata, repo_pdata)
 
-    @abilities.move_group(@pdata, @design)
+    thread = nil
+    mutex = Mutex.new
+    c = ConditionVariable.new
 
-    assert_includes @abilities.all_from(@arthurnn, 'Repository'), repo_design.id
-    refute_includes @abilities.all_from(@arthurnn, 'Repository'), repo_pdata.id
+    $waiter = Proc.new do
+      thread = Thread.new do
+        client2 = Mysql2::Client.new(host: "localhost", username: "root", database: "test")
+        tree = Tree.new(client2)
+        tree.delete_subtree(@pdata.id)
+        mutex.synchronize { c.signal }
+      end
+      mutex.synchronize { c.wait(mutex, 0.2) }
+    end
+
+    @abilities.add_group(t, @pdata)
+
+    thread.join
+
+    tree = Tree.new(@mysql)
+    assert_empty tree.parents(t.id)
+  ensure
+    $waiter = nil
+  end
+
+  def test_add_group_raise
+    $waiter = Proc.new do
+      raise "woops"
+    end
+    t = Team.create('under-pdata')
+
+    assert_raises do
+      @abilities.add_group(t, @pdata)
+    end
+    tree = Tree.new(@mysql)
+    assert_empty tree.parents(t.id)
+  ensure
+    $waiter = nil
   end
 end

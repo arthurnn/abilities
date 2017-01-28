@@ -23,16 +23,28 @@ class Tree
   end
 
   def insert(node)
-    if node.parent
-      r = @mysql.query "select path_string FROM rels where group_id=#{node.parent.id}"
-      path_string = r.each(:as => :array)[0][0]
-    else
-      path_string = ""
-    end
-    path_string = PathString.new(path_string).append(node.id).to_s
+    path_string = PathString.new.append(node.id).to_s
+    @mysql.query "BEGIN"
 
-    sql = "INSERT INTO rels (group_id, parent_id, path_string) VALUES (#{node.id}, #{node.parent ? node.parent.id : 'NULL'}, '#{Mysql2::Client.escape(path_string)}')"
-    @mysql.query(sql)
+    @mysql.query  <<-SQL
+      INSERT INTO rels (group_id, parent_id, path_string)
+      VALUES (#{node.id}, NULL, '#{Mysql2::Client.escape(path_string)}')
+    SQL
+    if node.parent
+      r = @mysql.query "SELECT path_string FROM rels WHERE group_id=#{node.parent.id} LOCK IN SHARE MODE"
+      old_path_string = r.each(:as => :array)[0][0]
+      path_string = PathString.new(old_path_string).append(node.id).to_s
+
+      ## REMOVE ME; just a simple hack so I can test without needing to stub
+      $waiter.call if $waiter
+
+      @mysql.query "UPDATE rels SET parent_id='#{node.parent.id}', path_string='#{Mysql2::Client.escape(path_string)}' WHERE group_id=#{node.id}"
+    end
+
+    @mysql.query "COMMIT"
+  rescue
+    @mysql.query "ROLLBACK"
+    raise
   end
 
   def update_parent(from_node_id, to_node_id)
@@ -83,7 +95,7 @@ class Tree
       path_string = row[0]
       PathString.new(path_string).each_id { |id| ids << id }
     end
-    ids.to_a
+    ids.to_a - node_ids
   end
 
   class PathString

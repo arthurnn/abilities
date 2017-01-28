@@ -53,7 +53,7 @@ class Abilities
     team_ids = results.each(:as => :array).map(&:first)
 
     tree = Tree.new(@client)
-    team_ids = tree.parents(team_ids)
+    team_ids += tree.parents(team_ids)
 
     results = @client.query <<-SQL
       SELECT subject_id
