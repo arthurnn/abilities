@@ -3,25 +3,7 @@ require_relative 'tree'
 
 class Abilities
   def self.create_schema(client)
-    client.query("DROP TABLE IF EXISTS rels")
-    client.query <<-SQL
-      CREATE TABLE rels (
-        id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-        parent_id INT UNSIGNED,
-        group_id BIGINT,
-        path_string varbinary(4069),
-        PRIMARY KEY (id),
-        INDEX `path_string_ix` (`path_string`(767))
-      );
-    SQL
-
-    # We need a sequence table, so we can break the path_string into chars
-    client.query("DROP TABLE IF EXISTS sequence")
-    client.query("CREATE TABLE sequence (id INT NOT NULL);")
-    1.upto(767) do |i|
-      client.query "INSERT INTO sequence VALUES (#{i});"
-    end
-
+    Tree.create_schema(client)
     client.query("DROP TABLE IF EXISTS abilities")
     client.query <<-SQL
       CREATE TABLE abilities (
