@@ -108,7 +108,7 @@ class AbilitiesTest < Minitest::Test
     refute_includes @abilities.all_from(@rocio, 'Repository'), repo_platform.id
   end
 
-  def test_deleting_del_parent_when_while_adding
+  def test_deleting_parent_when_while_adding
     t = Team.create('under-pdata')
     repo_pdata = Repository.create('platform-data')
     @abilities.add(@pdata, repo_pdata)
@@ -117,7 +117,7 @@ class AbilitiesTest < Minitest::Test
     mutex = Mutex.new
     c = ConditionVariable.new
 
-    $waiter = Proc.new do
+    $cp2 = Proc.new do
       thread = Thread.new do
         client2 = Mysql2::Client.new(host: "localhost", username: "root", database: "test")
         tree = Tree.new(client2)
@@ -134,11 +134,27 @@ class AbilitiesTest < Minitest::Test
     tree = Tree.new(@mysql)
     assert_empty tree.parents(t.id)
   ensure
-    $waiter = nil
+    $cp2 = nil
+  end
+
+  def test_del_parent_while_adding_2
+    $cp1 = Proc.new do
+      client2 = Mysql2::Client.new(host: "localhost", username: "root", database: "test")
+      tree = Tree.new(client2)
+      tree.delete_subtree(@pdata.id)
+    end
+
+    t = Team.create('under-pdata')
+    @abilities.add_group(t, @pdata)
+
+    tree = Tree.new(@mysql)
+    assert_empty tree.parents(t.id)
+  ensure
+    $cp1 = nil
   end
 
   def test_add_group_raise
-    $waiter = Proc.new do
+    $cp2 = Proc.new do
       raise "woops"
     end
     t = Team.create('under-pdata')
@@ -149,6 +165,6 @@ class AbilitiesTest < Minitest::Test
     tree = Tree.new(@mysql)
     assert_empty tree.parents(t.id)
   ensure
-    $waiter = nil
+    $cp2 = nil
   end
 end

@@ -26,19 +26,24 @@ class Tree
     path_string = PathString.new.append(node.id).to_s
     @mysql.query "BEGIN"
 
+    ## REMOVE ME; just a simple hack so I can test without needing to stub
+    $cp1.call if $cp1
+
     @mysql.query  <<-SQL
       INSERT INTO rels (group_id, parent_id, path_string)
       VALUES (#{node.id}, NULL, '#{Mysql2::Client.escape(path_string)}')
     SQL
     if node.parent
       r = @mysql.query "SELECT path_string FROM rels WHERE group_id=#{node.parent.id} LOCK IN SHARE MODE"
-      old_path_string = r.each(:as => :array)[0][0]
-      path_string = PathString.new(old_path_string).append(node.id).to_s
+      if r.count > 0
+        old_path_string = r.each(:as => :array)[0][0]
+        path_string = PathString.new(old_path_string).append(node.id).to_s
 
-      ## REMOVE ME; just a simple hack so I can test without needing to stub
-      $waiter.call if $waiter
+        ## REMOVE ME; just a simple hack so I can test without needing to stub
+        $cp2.call if $cp2
 
-      @mysql.query "UPDATE rels SET parent_id='#{node.parent.id}', path_string='#{Mysql2::Client.escape(path_string)}' WHERE group_id=#{node.id}"
+        @mysql.query "UPDATE rels SET parent_id='#{node.parent.id}', path_string='#{Mysql2::Client.escape(path_string)}' WHERE group_id=#{node.id}"
+      end
     end
 
     @mysql.query "COMMIT"
