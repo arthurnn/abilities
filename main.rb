@@ -28,6 +28,7 @@ class AbilitiesTest < Minitest::Test
     @rails_upgrade = Team.create 'rails-upgrade'
     @abilities.add_group(@parent)
     @abilities.add_group(@platform, @parent)
+    @abilities.add_group(@design, @parent)
     @abilities.add_group(@pdata, @platform)
     @abilities.add_group(@ha, @platform)
     @abilities.add_group(@rails_upgrade, @platform)
@@ -95,6 +96,14 @@ class AbilitiesTest < Minitest::Test
 
   def test_move_group
     @abilities.add(@design, repo_design = Repository.create('design'))
+    @abilities.add(@pdata, repo_pdata = Repository.create('platform-data'))
+    @abilities.add(@platform, repo_platform = Repository.create('platform'))
+
+    @abilities.move_group(@pdata, @design)
+
+    assert_includes @abilities.all_from(@rocio, 'Repository'), repo_design.id
+    assert_includes @abilities.all_from(@rocio, 'Repository'), repo_pdata.id
+    refute_includes @abilities.all_from(@rocio, 'Repository'), repo_platform.id
     repo_pdata = Repository.create('platform-data')
     @abilities.add(@pdata, repo_pdata)
 

@@ -36,12 +36,15 @@ class Tree
   end
 
   def update_parent(from_node_id, to_node_id)
-    from_path_string = PathString.new.append(from_node_id).to_s
-    to_path_string = PathString.new.append(to_node_id).to_s
+    results = @mysql.query <<-SQL
+      SELECT path_string FROM rels WHERE group_id = #{to_node_id};
+    SQL
+    path_string = results.each(:as => :array)[0][0]
+    to_path_string = PathString.new(path_string).append(to_node_id).to_s
 
     @mysql.query <<-SQL
       UPDATE rels
-      SET path_string = REPLACE(path_string, '#{from_path_string}', '#{to_path_string}')
+      SET path_string = '#{to_path_string}'
       WHERE group_id = #{from_node_id};
     SQL
   end
