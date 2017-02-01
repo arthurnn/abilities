@@ -52,19 +52,25 @@ class Tree
     raise
   end
 
-  def update_parent(from_node_id, to_node_id)
+  def update_parent(node_id, to_node_id)
     @mysql.query "BEGIN"
 
     results = @mysql.query <<-SQL
-      SELECT path_string FROM rels WHERE group_id = #{to_node_id} LOCK IN SHARE MODE
+      SELECT group_id, path_string FROM rels WHERE group_id IN (#{node_id}, #{to_node_id}) LOCK IN SHARE MODE
     SQL
-    path_string = results.each(:as => :array)[0][0]
-    to_path_string = PathString.new(path_string).append(to_node_id).to_s
+
+    paths = results.inject({}) do |hash, v|
+      hash[v['group_id']] = v['path_string']
+      hash
+    end
+
+    path_string = paths[node_id]
+    to_path_string = PathString.new(paths[to_node_id]).append(node_id).to_s
 
     @mysql.query <<-SQL
       UPDATE rels
-      SET path_string = '#{to_path_string}'
-      WHERE group_id = #{from_node_id};
+      SET path_string = REPLACE(path_string, '#{path_string}', '#{to_path_string}')
+      WHERE path_string LIKE '#{path_string}%';
     SQL
     @mysql.query "COMMIT"
   rescue

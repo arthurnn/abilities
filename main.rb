@@ -108,6 +108,22 @@ class AbilitiesTest < Minitest::Test
     refute_includes @abilities.all_from(@rocio, 'Repository'), repo_platform.id
   end
 
+  def test_move_group_with_sub_teams
+    t1 = Team.create('under-pdata1')
+    t2 = Team.create('under-under-pdata2')
+    @abilities.add_group(t1, @pdata)
+    @abilities.add_group(t2, t1)
+
+    @abilities.move_group(@pdata, @design)
+
+    tree = Tree.new(@mysql)
+    team_ids = tree.parents(t2.id)
+
+    assert_includes team_ids, t1.id
+    assert_includes team_ids, @pdata.id
+    refute_includes team_ids, @platform.id
+  end
+
   def test_deleting_parent_when_while_adding
     t = Team.create('under-pdata')
     repo_pdata = Repository.create('platform-data')
